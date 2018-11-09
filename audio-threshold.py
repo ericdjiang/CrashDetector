@@ -19,16 +19,7 @@ start = int(fs*start_t)
 clip = data[start:start+int(N)]
 times = np.arange(len(clip))/float(fs)
 
-full_clip = data[:]
-full_times = np.arange(len(full_clip))/float(fs)
-
-"""
-print("Chunk", N)
-print("Clip:", clip.ndim)
-print("Times:", len(times))
-"""
-
-total_time = len(full_times)/fs
+total_time = len(data)/fs
 curr_time = 0.0
 energies = []
 
