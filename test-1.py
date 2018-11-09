@@ -47,7 +47,7 @@ fs, data = wavfile.read('./bridge-2.wav') #fs = samplerate
 #https://gist.github.com/leouieda/9043213
 t = 0.1 # seconds of sampling
 N = fs*t # total points in signal
-start_t = 13
+start_t = 12
 start = int(fs*start_t)
 
 clip = data[start:start+int(N)]
@@ -78,11 +78,8 @@ f = fs*np.arange((N/2))/N # frequency vector
 # plotting
 ax2 = fig.add_subplot(gs[0,1]) # row 0, column 0
 line2, = ax2.plot(f,Pxx[:,0],color='k', linewidth="0.5")
-ax2.set_xscale('log')
-ax2.set_yscale('log')
 ax2.set_ylabel('Amplitude')
 ax2.set_xlabel('Frequency [Hz]')
-
 
 full_clip = data[:]
 full_times = np.arange(len(full_clip))/float(fs)
@@ -109,15 +106,20 @@ def animate(i):
     Y_k[1:] = 2 * Y_k[1:]  # need to take the single-sided spectrum only
     Pxx = np.abs(Y_k)  # be sure to get rid of imaginary part
 
+    print(np.max(Pxx))
+
     f = fs * np.arange((N / 2)) / N  # frequency vector
     line2.set_data(f, Pxx[:,0])
 
     line3.set_xdata([times[0], times[0]])
     #print(start/fs, times[0], times[-1])
 
-    energies = np.sum(Pxx**2)
-    print(energies/prev_energies)
+    energies = (np.delete(clip, (1), axis = 1)).transpose()
+    energies = np.square(energies, dtype = 'int64')
+    energies = np.sum(energies)
 
+    if (energies/prev_energies>10):
+        print("crash")
     prev_energies = energies
     return line1, line2, line3,
 
