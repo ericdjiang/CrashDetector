@@ -10,23 +10,25 @@ import time
 # Implementation of algorithm from https://stackoverflow.com/a/22640362/6029703
 import pylab
 
-def plot_energies(file_name):
+def plot_energies(file_name, t=0.1, start_t=0):
+    '''
+    start_t=0    # starting time in s
+    t=0.1  # seconds of sampling
+    '''
     fs, data = wavfile.read(file_name)  # fs = sample rate (Hz), data is the amplitudes
     try:
         data = (np.delete(data, (1), axis=1)).transpose()[0]  # delete second channel
     except:
         print("Error processing multiple audio channels")
     
-    t = 0.1  # seconds of sampling
-    N = int(fs*t)  # total points in chunk
-    start_t = 0    # starting time in s
     
+    x_time = int(fs*start_t)
     """
     convert start time (s) to x scale time 
     e.g. if the frequency rate is 44100Hz: x_time = 4410 would correspond to the data point at data[4410]
     x_time = 88200 also represents time = 2 seconds in real time
     """
-    x_time = int(fs*start_t)
+    N = int(fs*t)  # total points in chunk
     
     total_time = len(data)/fs  # total time in seconds
     curr_time = 0.0  # temporary value for for loop (s)
@@ -86,37 +88,76 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
     return dict(signals=labels,
                 avgFilter=avg_filter,
                 stdFilter=std_filter)
-"""    
-def detect_peak(file_name):
+
+
+def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6, influence=0.5):
     fs, data = wavfile.read(file_name)
-    lag = 30
-    threshold = 5
-    influence = 0
+    try:
+        data = (np.delete(data, (1), axis=1)).transpose()[0]  # delete second channel
+    except:
+        print("Error processing multiple audio channels")
+        
+    x_time = int(fs*start_t)
+    """
+    convert start time (s) to x scale time 
+    e.g. if the frequency rate is 44100Hz: x_time = 4410 would correspond to the data point at data[4410]
+    x_time = 88200 also represents time = 2 seconds in real time
+    """
+    N = int(fs*t)  # total points in chunk
+    
+    total_time = len(data)/fs  # total time in seconds
+    curr_time = 0.0  # temporary value for for loop (s)
+    energies = []   # normal array to store squared sum of each 1 sec chunk
+    
+    # loop through entire data set (not in real time)
+    # every .1 seconds, square and sum amplitudes in clip chunk
+    while curr_time < total_time:
+        clip = data[x_time:x_time + N]
+        energies.append(np.sum(np.square(clip, dtype='int64')))
+        x_time += N
+        curr_time += t
+    
+    energy_times = np.arange(len(energies))*t  # prepare x values for energies array
+    
+    gs = gridspec.GridSpec(1, 1)  # prepare graph layout
+    fig = plt.figure()
+    
+    ax1 = fig.add_subplot(gs[0,0])  # row 1, span all columns
+    ax1.plot(energy_times, energies, color='k', linewidth="0.5")
+    ax1.set_xlabel('Time (s)')
+    ax1.set_ylabel('Energy')
+    
+    plt.show()
     
     # Run algo with settings from above
-    result = peak_detection_smoothed_zscore_v2(data[:,0], lag=lag, threshold=threshold, influence=influence)
+    result = peak_detection_smoothed_zscore_v2(energies, lag=lag, threshold=threshold, influence=influence)
     
     # Plot result
     pylab.subplot(211)
-    pylab.plot(np.arange(1, len(data[:,0])+1), data[:,0])
+    pylab.plot(np.arange(1, len(energies)+1), energies)
     
-    pylab.plot(np.arange(1, len(data[:,0])+1),
+    pylab.plot(np.arange(1, len(energies)+1),
                result["avgFilter"], color="cyan", lw=2)
     
-    pylab.plot(np.arange(1, len(data[:,0])+1),
+    pylab.plot(np.arange(1, len(energies)+1),
                result["avgFilter"] + threshold * result["stdFilter"], color="green", lw=2)
     
-    pylab.plot(np.arange(1, len(data[:,0])+1),
+    pylab.plot(np.arange(1, len(energies)+1),
                result["avgFilter"] - threshold * result["stdFilter"], color="green", lw=2)
     
     pylab.subplot(212)
-    pylab.step(np.arange(1, len(data[:,0])+1), result["signals"], color="red", lw=2)
+    pylab.step(np.arange(1, len(energies)+1), result["signals"], color="red", lw=2)
     pylab.ylim(-1.5, 1.5)
-    """
+    
 if __name__ == "__main__":
     num_crashes = 12 # define how many crashes to use
     for k in range(num_crashes):
-        plot_energies('../Data/Crashes/crash_{:003d}.wav'.format(k+1))
-        #detect_peak('../Data/Crashes/crash_{:003d}.wav'.format(k+1))
+        #plot_energies('../Data/Crashes/crash_{:003d}.wav'.format(k+1))
+        detect_peak('../Data/Crashes/crash_{:003d}.wav'.format(k+1),
+                    t=0.1,
+                    start_t=0,
+                    lag=15,
+                    threshold=7,
+                    influence=0.8)
         # Settings: lag = 30, threshold = 5, influence = 0
         
