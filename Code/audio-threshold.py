@@ -156,7 +156,7 @@ if __name__ == "__main__":
         detect_peak('../Data/Crashes/crash_{:003d}.wav'.format(k+1),
                     t=0.1,
                     start_t=0,
-                    lag=15,
+                    lag=30,
                     threshold=7,
                     influence=0.8)
         # Settings: lag = 30, threshold = 5, influence = 0
