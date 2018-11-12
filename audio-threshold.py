@@ -7,7 +7,7 @@ from scipy.io import wavfile
 import matplotlib.gridspec as gridspec
 import time
 
-fs, data = wavfile.read('./bridge-2.wav')  # fs = sample rate (Hz), data is the amplitudes
+fs, data = wavfile.read('./Data/Crashes/crash_001.wav')  # fs = sample rate (Hz), data is the amplitudes
 try:
     data = (np.delete(data, (1), axis=1)).transpose()[0]  # delete second channel
 except:
