@@ -26,6 +26,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
                 labels[i] = 1
+                print('crash at time: ' + str(i))
             else:
                 labels[i] = -1
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
