@@ -26,6 +26,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
                 labels[i] = 1
+                print('crash at time: ' + str(i))
             else:
                 labels[i] = -1
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
@@ -44,7 +45,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
 
 
 def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
-                influence=0.5, print_pdf=''):
+                influence=0.5, print_pdf='', tick_dist=60.0):
     fs, data = wavfile.read(file_name)
     try:
         data = (np.delete(data, (1), axis=1)).transpose()[0]  # delete second channel
@@ -82,7 +83,7 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
     fig.suptitle(crash_id)
     ax1.plot(energy_times, energies, color='k', linewidth="0.5")
     ax4.set_xlabel('Time (s)')
-    ax4.set_xticks(np.arange(min(energy_times),max(energy_times)+1, 60.0))
+    ax4.set_xticks(np.arange(min(energy_times),max(energy_times)+1, tick_dist))
     ax3.set_xlim(0, len(energies)*t)
     
     ax1.set_ylabel('Energy')
@@ -118,15 +119,29 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
     
     print_pdf.savefig() #save to pdf
     plt.close(fig) # do not display figures
+    pp.close() #close pdf
     
     
 if __name__ == "__main__":
-    pdf_name='../Data/threshold_graphs.pdf'
-    pp = PdfPages(pdf_name)
     t = 0.1
-    lag = 1000
+    lag = 1500
     threshold = 6
     influence = 0.75
+    
+    
+    pdf_name='../Data/compilation_threshold_graphs.pdf'
+    pp = PdfPages(pdf_name)
+    detect_peak("C://Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav",
+                t=t,
+                lag=lag,
+                threshold=threshold,
+                influence=influence,
+                print_pdf=pp,
+                tick_dist=2400.0)
+    
+    """
+    pdf_name='../Data/threshold_graphs.pdf'
+    pp = PdfPages(pdf_name)
     
     directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
                    "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
@@ -144,18 +159,5 @@ if __name__ == "__main__":
                 continue
             else:
                 continue
-    
-    pp.close() # Close PDF
+    """ # Close PDF
     print('Done!')
-    
-    ''' # to view the shorter crash videos:
-    num_crashes = 12 # define how many crashes to use
-    for k in range(num_crashes):
-        #plot_energies('../Data/Crashes/crash_{:003d}.wav'.format(k+1))
-        detect_peak('../Data/Crashes/crash_{:003d}.wav'.format(k+1),
-                    t=0.1,
-                    lag=100,
-                    threshold=6,
-                    influence=0.75)
-    
-        '''
