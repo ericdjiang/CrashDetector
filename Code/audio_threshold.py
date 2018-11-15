@@ -6,6 +6,7 @@ from scipy.io import wavfile
 # Implementation of algorithm from https://stackoverflow.com/a/22640362/6029703
 import os
 from matplotlib.backends.backend_pdf import PdfPages
+import datetime
 
 def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
     '''
@@ -18,6 +19,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
     avg_filter = np.zeros(len(x))
     std_filter = np.zeros(len(x))
     var_filter = np.zeros(len(x))
+    crashes = []
 
     avg_filter[lag - 1] = np.mean(x[0:lag])
     std_filter[lag - 1] = np.std(x[0:lag])
@@ -26,7 +28,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
                 labels[i] = 1
-                print('crash at time: ' + str(i))
+                crashes += [i]
             else:
                 labels[i] = -1
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
@@ -41,7 +43,8 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
 
     return dict(signals=labels,
                 avgFilter=avg_filter,
-                stdFilter=std_filter)
+                stdFilter=std_filter,
+                crashes=crashes)
 
 
 def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
@@ -117,10 +120,17 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
              color='cyan',
              lw=3)
     
+      
     print_pdf.savefig() #save to pdf
     plt.close(fig) # do not display figures
     pp.close() #close pdf
     
+    print('Potential crashes at times:')
+    crashes = result['crashes']
+    crashes_secs = map(lambda x: np.round(x*t), crashes)
+    crash_times_mins = map(lambda x: str(datetime.timedelta(seconds=x)), crashes_secs)
+    print(result['crashes'])
+    print(list(crash_times_mins))
     
 if __name__ == "__main__":
     t = 0.1
