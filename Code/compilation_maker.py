@@ -15,8 +15,8 @@ def make_compilation(directories, outfile, ext='.wav'):
     """
     
     event_dict = {0:'nothing',
+                  2:'car_crash',
                   1:'crash',
-                  2:'car crash',
                   3:'train',
                   4:'car passing',
                   5:'plane flying',
@@ -24,7 +24,8 @@ def make_compilation(directories, outfile, ext='.wav'):
     
     infiles = []
     event_times = []
-    event_ids = []    
+    event_ids = []
+    files = []    
     
     for dir_string in directories:
         directory = os.fsencode(dir_string)
@@ -37,6 +38,7 @@ def make_compilation(directories, outfile, ext='.wav'):
                 event_time = event_info.split(' at ')[-1]
                 event_time = event_time.split('-')
                 event_times += [float(event_time[0])*60+float(event_time[1])]
+                files += [filename]
                 
                 for keycode in event_dict:
                     if event_dict[keycode] in event_info:
@@ -48,7 +50,7 @@ def make_compilation(directories, outfile, ext='.wav'):
             else:
                 continue
     
-    return event_times, event_ids   
+    return event_times, event_ids, files
 '''
     data= []
     for infile in infiles:
