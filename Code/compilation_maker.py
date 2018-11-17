@@ -6,7 +6,8 @@ Created on Wed Nov 14 15:19:40 2018
 """
 import os
 import wave
-
+import contextlib
+import numpy as np
 
 def make_compilation(directories, outfile, ext='.wav'):
     """
@@ -25,7 +26,8 @@ def make_compilation(directories, outfile, ext='.wav'):
     infiles = []
     event_times = []
     event_ids = []
-    files = []    
+    files = []
+    durations = []   
     
     for dir_string in directories:
         directory = os.fsencode(dir_string)
@@ -33,13 +35,22 @@ def make_compilation(directories, outfile, ext='.wav'):
             filename = os.fsdecode(file)
             
             if filename.endswith(ext):
-                infiles += [os.path.join(dir_string, filename)]
+                infile = os.path.join(dir_string, filename)
+                infiles += infile 
                 event_info = filename.replace(ext,'').replace('b', '').strip()
                 event_time = event_info.split(' at ')[-1]
                 event_time = event_time.split('-')
                 event_times += [float(event_time[0])*60+float(event_time[1])]
                 files += [filename]
                 
+                # get duration of files
+                with contextlib.closing(wave.open(infile,'r')) as f:
+                    frames = f.getnframes()
+                    rate = f.getframerate()
+                    duration = frames / float(rate)
+                    durations += [duration]
+                
+                # classify each .wav by event
                 for keycode in event_dict:
                     if event_dict[keycode] in event_info:
                         event_ids += [keycode]
@@ -50,24 +61,19 @@ def make_compilation(directories, outfile, ext='.wav'):
             else:
                 continue
     
-    return event_times, event_ids, files
-'''
-    data= []
-    for infile in infiles:
-        w = wave.open(infile, 'rb')
-        data.append( [w.getparams(), w.readframes(w.getnframes())] )
-        w.close()
+    # create array for event times with ending value of 0
+    event_times = np.array(event_times + [0])
+    # create cumulative sum of durations to add to event_times with first value 0
+    durations_cum_sum = np.cumsum([0] + durations)
+    # create cumulative sum of event times to identify time in compilation
+    # without last value
+    event_times_cum_sum = (event_times + durations_cum_sum)[:-1]
     
-    output = wave.open(outfile, 'wb')
-    output.setparams(data[0][0])
-    for params,frames in data:
-        output.writeframes(frames)
-    output.close()
-'''   
-    
+    return event_ids, event_times_cum_sum, files
+
 if __name__ == '__main__':
     directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
                    "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
     output = "C:/Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
     ext = '.wav'
-    print(make_compilation(directories, output, ext))
+    event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)
