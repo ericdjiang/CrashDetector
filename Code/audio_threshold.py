@@ -6,6 +6,7 @@ from scipy.io import wavfile
 # Implementation of algorithm from https://stackoverflow.com/a/22640362/6029703
 import os
 from matplotlib.backends.backend_pdf import PdfPages
+import datetime
 
 def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
     '''
@@ -18,6 +19,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
     avg_filter = np.zeros(len(x))
     std_filter = np.zeros(len(x))
     var_filter = np.zeros(len(x))
+    crashes = []
 
     avg_filter[lag - 1] = np.mean(x[0:lag])
     std_filter[lag - 1] = np.std(x[0:lag])
@@ -26,9 +28,9 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
                 labels[i] = 1
-                print('crash at time: ' + str(i))
+                crashes += [i]
             else:
-                labels[i] = -1
+                labels[i] = 0
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
         else:
             labels[i] = 0
@@ -41,11 +43,12 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
 
     return dict(signals=labels,
                 avgFilter=avg_filter,
-                stdFilter=std_filter)
+                stdFilter=std_filter,
+                crashes=crashes)
 
 
 def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
-                influence=0.5, print_pdf='', tick_dist=60.0):
+                influence=0.5, print_pdf=None, tick_dist=60.0):
     fs, data = wavfile.read(file_name)
     try:
         data = (np.delete(data, (1), axis=1)).transpose()[0]  # delete second channel
@@ -117,10 +120,22 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
              color='cyan',
              lw=3)
     
-    print_pdf.savefig() #save to pdf
-    plt.close(fig) # do not display figures
-    pp.close() #close pdf
+    if print_pdf != None:
+        print_pdf.savefig() #save to pdf
+        plt.close(fig) # do not display figures
+        pp.close() #close pdf
     
+    
+    crashes = result['crashes']
+    crashes_secs = list(map(lambda x: np.round(x*t), crashes))
+    
+    crash_times_mins = map(lambda x: str(datetime.timedelta(seconds=x)), crashes_secs)
+    """print('Potential crashes at windows:')
+    print(result['crashes'])"""
+    print('Potential crashes at times:')
+    print(list(crash_times_mins))
+    print('Potential crashes at times (in secs):')
+    print(list(crashes_secs))
     
 if __name__ == "__main__":
     t = 0.1
@@ -138,26 +153,5 @@ if __name__ == "__main__":
                 influence=influence,
                 print_pdf=pp,
                 tick_dist=2400.0)
-    
-    """
-    pdf_name='../Data/threshold_graphs.pdf'
-    pp = PdfPages(pdf_name)
-    
-    directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
-                   "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
-    for dir_string in directories:
-        directory = os.fsencode(dir_string)
-        for file in os.listdir(directory):
-            filename = os.fsdecode(file)
-            if filename.endswith(".wav"):
-                detect_peak(os.path.join(dir_string, filename),
-                        t=t,
-                        lag=lag,
-                        threshold=threshold,
-                        influence=influence,
-                        print_pdf=pp)
-                continue
-            else:
-                continue
-    """ # Close PDF
+
     print('Done!')
