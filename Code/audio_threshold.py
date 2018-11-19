@@ -156,4 +156,25 @@ if __name__ == "__main__":
                 print_pdf=pp,
                 tick_dist=2400.0)
 
-    #print('Done!')
+
+    """ #iterate over files in a directory
+        pdf_name='../Data/threshold_graphs.pdf'
+        pp = PdfPages(pdf_name)
+
+        directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
+                       "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
+        for dir_string in directories:
+            directory = os.fsencode(dir_string)
+            for file in os.listdir(directory):
+                filename = os.fsdecode(file)
+                if filename.endswith(".wav"):
+                    detect_peak(os.path.join(dir_string, filename),
+                            t=t,
+                            lag=lag,
+                            threshold=threshold,
+                            influence=influence,
+                            print_pdf=pp)
+                    continue
+                else:
+                    continue
+        """  # Close PDF
