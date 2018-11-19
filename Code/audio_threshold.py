@@ -8,7 +8,7 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 import datetime
 
-def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
+def peak_detection_smoothed_zscore_v2(x, t, lag, threshold, influence):
     '''
     iterative smoothed z-score algorithm
     Implementation of algorithm from https://stackoverflow.com/a/22640362/6029703
@@ -28,7 +28,8 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
                 labels[i] = 1
-                crashes += [i]
+                if not 1 in labels[int(i-(5/t)):i]:
+                    crashes += [i]
             else:
                 labels[i] = 0
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
@@ -101,6 +102,7 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
     
     # Run algo with settings from above
     result = peak_detection_smoothed_zscore_v2(energies,
+                                               t=t,
                                                lag=lag,
                                                threshold=threshold,
                                                influence=influence)
@@ -127,22 +129,22 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
     
     
     crashes = result['crashes']
-    crashes_secs = list(map(lambda x: np.round(x*t), crashes))
+    crashes_secs = list(map(lambda x: np.round(x*t, 2), crashes))
     
-    crash_times_mins = map(lambda x: str(datetime.timedelta(seconds=x)), crashes_secs)
+    crash_times_mins = list(map(lambda x: str(datetime.timedelta(seconds=round(x))),
+                           crashes_secs))
     """print('Potential crashes at windows:')
     print(result['crashes'])"""
     print('Potential crashes at times:')
-    print(list(crash_times_mins))
+    print(crash_times_mins)
     print('Potential crashes at times (in secs):')
-    print(list(crashes_secs))
+    print(crashes_secs)
     
 if __name__ == "__main__":
     t = 0.1
     lag = 1500
     threshold = 6
     influence = 0.75
-    
     
     pdf_name='../Data/compilation_threshold_graphs.pdf'
     pp = PdfPages(pdf_name)
@@ -154,4 +156,4 @@ if __name__ == "__main__":
                 print_pdf=pp,
                 tick_dist=2400.0)
 
-    print('Done!')
+    #print('Done!')
