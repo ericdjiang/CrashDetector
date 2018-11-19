@@ -69,6 +69,8 @@ def make_compilation(directories, outfile, ext='.wav'):
     # without last value
     event_times_cum_sum = (event_times + durations_cum_sum)[:-1]
     
+    print(durations_cum_sum[-1])
+    
     return event_ids, event_times_cum_sum, files
 
 if __name__ == '__main__':
@@ -77,3 +79,4 @@ if __name__ == '__main__':
     output = "C:/Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
     ext = '.wav'
     event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)
+    

@@ -30,7 +30,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
                 labels[i] = 1
                 crashes += [i]
             else:
-                labels[i] = -1
+                labels[i] = 0
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
         else:
             labels[i] = 0
@@ -48,7 +48,7 @@ def peak_detection_smoothed_zscore_v2(x, lag, threshold, influence):
 
 
 def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
-                influence=0.5, print_pdf='', tick_dist=60.0):
+                influence=0.5, print_pdf=None, tick_dist=60.0):
     fs, data = wavfile.read(file_name)
     try:
         data = (np.delete(data, (1), axis=1)).transpose()[0]  # delete second channel
@@ -120,17 +120,22 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
              color='cyan',
              lw=3)
     
-      
-    print_pdf.savefig() #save to pdf
-    plt.close(fig) # do not display figures
-    pp.close() #close pdf
+    if print_pdf != None:
+        print_pdf.savefig() #save to pdf
+        plt.close(fig) # do not display figures
+        pp.close() #close pdf
     
-    print('Potential crashes at times:')
+    
     crashes = result['crashes']
-    crashes_secs = map(lambda x: np.round(x*t), crashes)
+    crashes_secs = list(map(lambda x: np.round(x*t), crashes))
+    
     crash_times_mins = map(lambda x: str(datetime.timedelta(seconds=x)), crashes_secs)
-    print(result['crashes'])
+    """print('Potential crashes at windows:')
+    print(result['crashes'])"""
+    print('Potential crashes at times:')
     print(list(crash_times_mins))
+    print('Potential crashes at times (in secs):')
+    print(list(crashes_secs))
     
 if __name__ == "__main__":
     t = 0.1
@@ -148,26 +153,5 @@ if __name__ == "__main__":
                 influence=influence,
                 print_pdf=pp,
                 tick_dist=2400.0)
-    
-    """
-    pdf_name='../Data/threshold_graphs.pdf'
-    pp = PdfPages(pdf_name)
-    
-    directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
-                   "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
-    for dir_string in directories:
-        directory = os.fsencode(dir_string)
-        for file in os.listdir(directory):
-            filename = os.fsdecode(file)
-            if filename.endswith(".wav"):
-                detect_peak(os.path.join(dir_string, filename),
-                        t=t,
-                        lag=lag,
-                        threshold=threshold,
-                        influence=influence,
-                        print_pdf=pp)
-                continue
-            else:
-                continue
-    """ # Close PDF
+
     print('Done!')
