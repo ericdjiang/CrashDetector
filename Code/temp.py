@@ -1,36 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 14 15:19:40 2018
+Created on Mon Nov 26 15:21:38 2018
 
 @author: elind
 """
-import os
-import wave
 
-infiles = []
-outfile = "C:/Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
+# Python program to count the 
+# number of numbers in a given range 
+import numpy as np
 
-directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
-                   "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
-for dir_string in directories:
-    directory = os.fsencode(dir_string)
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        if filename.endswith(".wav"):
-            infiles += [os.path.join(dir_string, filename)]
-            continue
-        else:
-            continue
-        
-print(infiles)
-data= []
-for infile in infiles:
-    w = wave.open(infile, 'rb')
-    data.append( [w.getparams(), w.readframes(w.getnframes())] )
-    w.close()
+def count(list1, l, r): 
+	
+	# x for x in list1 is same as traversal in the list 
+	# the if condition checks for the number of numbers in the range 
+	# l to r 
+	# the return is stored in a list 
+	# whose length is the answer 
+	return len(list(x for x in list1 if l <= x <= r)) 
 
-output = wave.open(outfile, 'wb')
-output.setparams(data[0][0])
-for params,frames in data:
-    output.writeframes(frames)
-output.close()
+# driver code 
+list1 = np.array([10, 20, 30, 40, 50, 40, 40, 60, 70]) 
+keys = np.array([30, 40, 50, 60])
+print(count(list1, l, r))

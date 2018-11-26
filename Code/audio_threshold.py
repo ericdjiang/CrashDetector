@@ -70,6 +70,8 @@ def make_compilation(directories, outfile, ext='.wav'):
             else:
                 continue
     
+    # create array from event_ids
+    event_ids = np.array(event_ids)
     # create array for event times with ending value of 0
     event_times = np.array(event_times + [0])
     # create cumulative sum of durations to add to event_times with first value 0
@@ -204,14 +206,31 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
         pp.close() #close pdf
     
     
-    crashes = result['crashes']
-    crashes_secs = list(map(lambda x: np.round(x*t, 2), crashes))
-    
+    crashes = np.array(result['crashes'])
+    crashes_secs = np.round(crashes*t, 1)
     crash_times_mins = list(map(lambda x: str(datetime.timedelta(seconds=round(x))),
                            crashes_secs))
     return crashes, crashes_secs, crash_times_mins
+
+def calculate_accuracy(real_crash_times, crashes_secs):
+    successes = []
+    failures = []
+    for y in real_crash_times:
+        if len(list(x for x in crashes_secs if y-10 <= x <= y+10)) > 0:
+            successes += [y]
+        else:
+            failures += [y]
+    accuracy = len(successes) / (len(successes) + len(failures))
+    return successes, failures, accuracy
+    
+def find_false_positives():
+    false_positives = []
+    return false_positives
     
 if __name__ == "__main__":
+    
+    #%% detect crashes on compilation
+    
     t = 0.1
     lag = 1500
     threshold = 6
@@ -226,40 +245,60 @@ if __name__ == "__main__":
                                                             influence=influence,
                                                             print_pdf=pp,
                                                             tick_dist=2400.0)
-    """print('Potential crashes at windows:')
-    print(result['crashes'])"""
+    
+    #%% print detected crashes
+    """
     print('Potential crashes at times:')
     print(crash_times_mins)
     print('Potential crashes at times (in secs):')
     print(crashes_secs)
+    """
+
+    #%% detect crashes in each file in directory
     
+    pdf_name='../Data/threshold_graphs.pdf'
+    pp = PdfPages(pdf_name)
 
-
-    """ #iterate over files in a directory
-        pdf_name='../Data/threshold_graphs.pdf'
-        pp = PdfPages(pdf_name)
-
-        directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
-                       "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
-        for dir_string in directories:
-            directory = os.fsencode(dir_string)
-            for file in os.listdir(directory):
-                filename = os.fsdecode(file)
-                if filename.endswith(".wav"):
-                    detect_peak(os.path.join(dir_string, filename),
-                            t=t,
-                            lag=lag,
-                            threshold=threshold,
-                            influence=influence,
-                            print_pdf=pp)
-                    continue
-                else:
-                    continue
-        """  # Close PDF
-    #create compilation and return statistics 
+    directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
+                   "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
+    for dir_string in directories:
+        directory = os.fsencode(dir_string)
+        for file in os.listdir(directory):
+            filename = os.fsdecode(file)
+            if filename.endswith(".wav"):
+                detect_peak(os.path.join(dir_string, filename),
+                        t=t,
+                        lag=lag,
+                        threshold=threshold,
+                        influence=influence,
+                        print_pdf=pp)
+                continue
+            else:
+                continue
+    
+        
+    #%% create compilation and return statistics 
+    
     directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
                    "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
     output = "C:/Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
     ext = '.wav'
-    event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)
+    event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)    
+    real_crash_times = event_times_cum_sum[np.where(event_ids == 1)]
+    
+    
+    #%% calculate accuracy
+    
+    successes, failures, accuracy = calculate_accuracy(real_crash_times,
+                                                       crashes_secs)
+    
+    print('accuracy of algorithm:')
+    print(str(len(successes)) + '/' + str(len(successes)+len(failures)) \
+          + ' crashes detected')
+    print('\nproportion of real crashes detected:')
+    print(accuracy)
+    print('\nsuccesses')
+    print(successes)
+    print('\nfailures')
+    print(failures)
     
