@@ -126,7 +126,7 @@ def peak_detect(x, t, lag, threshold, influence):
                 crashes=crashes)
 
 
-def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
+def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
                 influence=0.5, print_pdf=None, tick_dist=60.0):
     fs, data = wavfile.read(file_name)
     try:
@@ -180,10 +180,10 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
     
     # Run algo with settings from above
     result = peak_detect(energies,
-                                               t=t,
-                                               lag=lag,
-                                               threshold=threshold,
-                                               influence=influence)
+                         t=t,
+                         lag=lag,
+                         threshold=threshold,
+                         influence=influence)
     
     ax2.plot(energy_times, energies)
     ax2.plot(np.arange(lag, len(energies))*t,
@@ -203,7 +203,10 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
     if print_pdf != None:
         print_pdf.savefig() #save to pdf
         plt.close(fig) # do not display figures
-        pp.close() #close pdf
+        try:
+            pp.close() #close pdf
+        except:
+            pass
     
     
     crashes = np.array(result['crashes'])
@@ -215,26 +218,24 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=30, threshold=6,
 def calculate_accuracy(real_crash_times, crashes_secs):
     successes = []
     failures = []
+    false_positives = []
     for y in real_crash_times:
         if len(list(x for x in crashes_secs if y-10 <= x <= y+10)) > 0:
             successes += [y]
         else:
             failures += [y]
     accuracy = len(successes) / (len(successes) + len(failures))
-    return successes, failures, accuracy
-    
-def find_false_positives():
-    false_positives = []
-    return false_positives
-    
-if __name__ == "__main__":
+    for time in crashes_secs:
+        if len(list(x for x in real_crash_times if time-10 <= x <= time+10)) == 0:
+            false_positives += [time]
+    return successes, failures, false_positives, accuracy
     
     #%% detect crashes on compilation
-    
-    t = 0.1
+if __name__ == "__main__":    
+    t = 0.25
     lag = 1500
     threshold = 6
-    influence = 0.75
+    influence = 0.5
     
     pdf_name='../Data/compilation_threshold_graphs.pdf'
     pp = PdfPages(pdf_name)
@@ -255,7 +256,7 @@ if __name__ == "__main__":
     """
 
     #%% detect crashes in each file in directory
-    
+    """
     pdf_name='../Data/threshold_graphs.pdf'
     pp = PdfPages(pdf_name)
 
@@ -275,7 +276,7 @@ if __name__ == "__main__":
                 continue
             else:
                 continue
-    
+    """
         
     #%% create compilation and return statistics 
     
@@ -289,7 +290,7 @@ if __name__ == "__main__":
     
     #%% calculate accuracy
     
-    successes, failures, accuracy = calculate_accuracy(real_crash_times,
+    successes, failures, false_positives, accuracy = calculate_accuracy(real_crash_times,
                                                        crashes_secs)
     
     print('accuracy of algorithm:')
@@ -297,8 +298,11 @@ if __name__ == "__main__":
           + ' crashes detected')
     print('\nproportion of real crashes detected:')
     print(accuracy)
+    print('\nfalse positive count: {:}'.format(len(false_positives)))
     print('\nsuccesses')
     print(successes)
     print('\nfailures')
     print(failures)
+    print('\nfalse positives:')
+    print(false_positives)
     
