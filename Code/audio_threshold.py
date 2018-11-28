@@ -126,11 +126,11 @@ def peak_detect(x, t, lag, threshold, influence):
                 crashes=crashes)
 
 
-def make_fft(N, fs, crash, data, print_pdf=None):
+def make_fft(N, fs, t, crash, data, print_pdf=None):
     # for future reference
     # https://stackoverflow.com/questions/31120043/python-creating-multiple-plots-in-one-figure-with-for-loop
 
-    clip = data[crash:crash+N]
+    clip = data[int(crash*t*fs) - 20*N:int(crash*t*fs) + 20*N]
     Y_k = np.fft.fft(clip)[0:int(N / 2)] / N  # FFT function from numpy
     Y_k[1:] = 2 * Y_k[1:]  # need to take the single-sided spectrum only
     Pxx = np.abs(Y_k)  # be sure to get rid of imaginary part
@@ -141,6 +141,7 @@ def make_fft(N, fs, crash, data, print_pdf=None):
     ax1.set_ylabel('Amplitude')
     ax1.set_xlabel('Frequency [Hz]')
     ax1.set_title(str(crash*N/fs))
+    # set standard ax1.set_ylim([])
 
     if print_pdf != None:
         print_pdf.savefig()  # save to pdf
@@ -233,7 +234,7 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
     crashes_secs = np.round(crashes*t, 1)
     crash_times_mins = list(map(lambda x: str(datetime.timedelta(seconds=round(x))),
                            crashes_secs))
-    return data, crashes, crashes_secs, crash_times_mins, N, fs
+    return data, crashes, crashes_secs, crash_times_mins, N, fs, t
 
 def calculate_accuracy(real_crash_times, crashes_secs):
     successes = []
@@ -261,7 +262,7 @@ if __name__ == "__main__":
     full_crashes_audio_file = "/Data/Full_Crashes/Audio"
     trains_audio_file = "/Data/Trains/Audio"
     ### IMPORTANT: CHANGE THIS
-    work_dir = elind_dir
+    work_dir = edj9_dir
     
     
     directories = [work_dir + full_crashes_audio_file,
@@ -290,7 +291,7 @@ if __name__ == "__main__":
                                influence=influence,
                                print_pdf=pp,
                                tick_dist=2400.0)
-    data, crashes, crashes_secs, crash_times_mins, N, fs = peak_results
+    data, crashes, crashes_secs, crash_times_mins, N, fs, t = peak_results
 
 
     fft_pdf_name = '../Data/fft_graphs.pdf'
@@ -298,6 +299,7 @@ if __name__ == "__main__":
     for crash in crashes:
         make_fft(N,
                  fs,
+                 t,
                  crash,
                  data,
                  print_pdf=pp_fft)
