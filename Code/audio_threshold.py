@@ -255,13 +255,13 @@ if __name__ == "__main__":
     
     
     #%% create compilation and return statistics 
-    edj9_dir = "C://Users/edj9/Box/11Foot8/"
-    elind_dir = "C://Users/elind/Box/11Foot8/"
+    edj9_box_dir = "C://Users/edj9/Box/11Foot8/"
+    elind_box_dir = "C://Users/elind/Box/11Foot8/"
     comp_file_name = "Data/Compilations/full_crash_compilation.wav"
     full_crashes_audio_file = "/Data/Full_Crashes/Audio"
     trains_audio_file = "/Data/Trains/Audio"
     ### IMPORTANT: CHANGE THIS
-    work_dir = elind_dir
+    work_dir = elind_box_dir
     
     
     directories = [work_dir + full_crashes_audio_file,
