@@ -80,8 +80,6 @@ def make_compilation(directories, outfile, ext='.wav'):
     # without last value
     event_times_cum_sum = (event_times + durations_cum_sum)[:-1]
     
-    print(durations_cum_sum[-1])
-    
     return event_ids, event_times_cum_sum, files
 
 
@@ -141,7 +139,11 @@ def make_fft(N, fs, t, crash, data, print_pdf=None):
     ax1.set_ylabel('Amplitude')
     ax1.set_xlabel('Frequency [Hz]')
     ax1.set_title(str(crash*N/fs))
+<<<<<<< HEAD
     # set standard ax1.set_ylim([])
+=======
+    ax1.set_ylim(0, 500)
+>>>>>>> 9203cb4244424551443f4716f228fa3e7dbc4ba0
 
     if print_pdf != None:
         print_pdf.savefig()  # save to pdf
@@ -256,13 +258,17 @@ if __name__ == "__main__":
     
     
     #%% create compilation and return statistics 
-    edj9_dir = "C://Users/edj9/Box/11Foot8/"
-    elind_dir = "C://Users/elind/Box/11Foot8/"
+    edj9_box_dir = "C://Users/edj9/Box/11Foot8/"
+    elind_box_dir = "C://Users/elind/Box/11Foot8/"
     comp_file_name = "Data/Compilations/full_crash_compilation.wav"
     full_crashes_audio_file = "/Data/Full_Crashes/Audio"
     trains_audio_file = "/Data/Trains/Audio"
     ### IMPORTANT: CHANGE THIS
+<<<<<<< HEAD
     work_dir = edj9_dir
+=======
+    work_dir = elind_box_dir
+>>>>>>> 9203cb4244424551443f4716f228fa3e7dbc4ba0
     
     
     directories = [work_dir + full_crashes_audio_file,
@@ -293,7 +299,27 @@ if __name__ == "__main__":
                                tick_dist=2400.0)
     data, crashes, crashes_secs, crash_times_mins, N, fs, t = peak_results
 
+    #%% calculate accuracy
+    
+    successes, failures, false_positives, accuracy = calculate_accuracy(real_crash_times,
+                                                       crashes_secs)
+    
+    print('accuracy of algorithm:')
+    print(str(len(successes)) + '/' + str(len(successes)+len(failures)) \
+          + ' crashes detected')
+    print('\nproportion of real crashes detected:')
+    print(accuracy)
+    print('\nfalse positive count: {:}'.format(len(false_positives)))
+    print('\nsuccesses')
+    print(successes)
+    print('\nfailures')
+    print(failures)
+    print('\nfalse positives:')
+    print(false_positives)
+    
 
+    #%% fft on each detection
+    
     fft_pdf_name = '../Data/fft_graphs.pdf'
     pp_fft = PdfPages(fft_pdf_name)
     for crash in crashes:
@@ -337,22 +363,4 @@ if __name__ == "__main__":
     """
         
 
-    
-    #%% calculate accuracy
-    
-    successes, failures, false_positives, accuracy = calculate_accuracy(real_crash_times,
-                                                       crashes_secs)
-    
-    print('accuracy of algorithm:')
-    print(str(len(successes)) + '/' + str(len(successes)+len(failures)) \
-          + ' crashes detected')
-    print('\nproportion of real crashes detected:')
-    print(accuracy)
-    print('\nfalse positive count: {:}'.format(len(false_positives)))
-    print('\nsuccesses')
-    print(successes)
-    print('\nfailures')
-    print(failures)
-    print('\nfalse positives:')
-    print(false_positives)
     
