@@ -250,8 +250,29 @@ def calculate_accuracy(real_crash_times, crashes_secs):
             false_positives += [time]
     return successes, failures, false_positives, accuracy
     
-    #%% detect crashes on compilation
+
 if __name__ == "__main__":    
+    
+    
+    #%% create compilation and return statistics 
+    edj9_dir = "C://Users/edj9/Box/11Foot8/"
+    elind_dir = "C://Users/elind/Box/11Foot8/"
+    comp_file_name = "Data/Compilations/full_crash_compilation.wav"
+    full_crashes_audio_file = "/Data/Full_Crashes/Audio"
+    trains_audio_file = "/Data/Trains/Audio"
+    ### IMPORTANT: CHANGE THIS
+    work_dir = elind_dir
+    
+    
+    directories = [work_dir + full_crashes_audio_file,
+                   work_dir + trains_audio_file]
+    output = work_dir + comp_file_name
+    ext = '.wav'
+    event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)    
+    real_crash_times = event_times_cum_sum[np.where(event_ids == 1)]
+        
+    
+    #%% detect crashes on compilation
     t = 0.25
     lag = 1500
     threshold = 6
@@ -259,13 +280,18 @@ if __name__ == "__main__":
     
     pdf_name='../Data/compilation_threshold_graphs.pdf'
     pp = PdfPages(pdf_name)
-    data, crashes, crashes_secs, crash_times_mins, N, fs = detect_peak("C://Users/edj9/Box/11Foot8/Data/Compilations/full_crash_compilation.wav",
-                                                            t=t,
-                                                            lag=lag,
-                                                            threshold=threshold,
-                                                            influence=influence,
-                                                            print_pdf=pp,
-                                                            tick_dist=2400.0)
+    
+    
+    
+    peak_results = detect_peak(work_dir + comp_file_name,
+                               t=t,
+                               lag=lag,
+                               threshold=threshold,
+                               influence=influence,
+                               print_pdf=pp,
+                               tick_dist=2400.0)
+    data, crashes, crashes_secs, crash_times_mins, N, fs = peak_results
+
 
     fft_pdf_name = '../Data/fft_graphs.pdf'
     pp_fft = PdfPages(fft_pdf_name)
@@ -308,15 +334,7 @@ if __name__ == "__main__":
                 continue
     """
         
-    #%% create compilation and return statistics 
-    
-    directories = ["C://Users/edj9/Box/11Foot8/Data/Full_Crashes/Audio",
-                   "C://Users/edj9/Box/11Foot8/Data/Trains/Audio"]
-    output = "C:/Users/edj9/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
-    ext = '.wav'
-    event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)    
-    real_crash_times = event_times_cum_sum[np.where(event_ids == 1)]
-    
+
     
     #%% calculate accuracy
     
