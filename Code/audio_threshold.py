@@ -126,6 +126,26 @@ def peak_detect(x, t, lag, threshold, influence):
                 crashes=crashes)
 
 
+def make_fft(N, fs, crash, data, print_pdf=None):
+    # for future reference
+    # https://stackoverflow.com/questions/31120043/python-creating-multiple-plots-in-one-figure-with-for-loop
+
+    clip = data[crash:crash+N]
+    Y_k = np.fft.fft(clip)[0:int(N / 2)] / N  # FFT function from numpy
+    Y_k[1:] = 2 * Y_k[1:]  # need to take the single-sided spectrum only
+    Pxx = np.abs(Y_k)  # be sure to get rid of imaginary part
+    f = fs * np.arange((N / 2)) / N  # frequency vector
+
+    fig, ax1 = plt.subplots()
+    ax1.plot(f, Pxx, color='k', linewidth="0.5")
+    ax1.set_ylabel('Amplitude')
+    ax1.set_xlabel('Frequency [Hz]')
+    ax1.set_title(str(crash*N/fs))
+
+    if print_pdf != None:
+        print_pdf.savefig()  # save to pdf
+        plt.close(fig)  # do not display figures
+
 def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
                 influence=0.5, print_pdf=None, tick_dist=60.0):
     fs, data = wavfile.read(file_name)
@@ -213,7 +233,7 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
     crashes_secs = np.round(crashes*t, 1)
     crash_times_mins = list(map(lambda x: str(datetime.timedelta(seconds=round(x))),
                            crashes_secs))
-    return crashes, crashes_secs, crash_times_mins
+    return data, crashes, crashes_secs, crash_times_mins, N, fs
 
 def calculate_accuracy(real_crash_times, crashes_secs):
     successes = []
@@ -239,13 +259,23 @@ if __name__ == "__main__":
     
     pdf_name='../Data/compilation_threshold_graphs.pdf'
     pp = PdfPages(pdf_name)
-    crashes, crashes_secs, crash_times_mins = detect_peak("C://Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav",
+    data, crashes, crashes_secs, crash_times_mins, N, fs = detect_peak("C://Users/edj9/Box/11Foot8/Data/Compilations/full_crash_compilation.wav",
                                                             t=t,
                                                             lag=lag,
                                                             threshold=threshold,
                                                             influence=influence,
                                                             print_pdf=pp,
                                                             tick_dist=2400.0)
+
+    fft_pdf_name = '../Data/fft_graphs.pdf'
+    pp_fft = PdfPages(fft_pdf_name)
+    for crash in crashes:
+        make_fft(N,
+                 fs,
+                 crash,
+                 data,
+                 print_pdf=pp_fft)
+    pp_fft.close()
     
     #%% print detected crashes
     """
@@ -260,8 +290,8 @@ if __name__ == "__main__":
     pdf_name='../Data/threshold_graphs.pdf'
     pp = PdfPages(pdf_name)
 
-    directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
-                   "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
+    directories = ["C://Users/edj9/Box/11Foot8/Data/Full_Crashes/Audio",
+                   "C://Users/edj9/Box/11Foot8/Data/Trains/Audio"]
     for dir_string in directories:
         directory = os.fsencode(dir_string)
         for file in os.listdir(directory):
@@ -280,9 +310,9 @@ if __name__ == "__main__":
         
     #%% create compilation and return statistics 
     
-    directories = ["C://Users/elind/Box/11Foot8/Data/Full_Crashes/Audio",
-                   "C://Users/elind/Box/11Foot8/Data/Trains/Audio"]
-    output = "C:/Users/elind/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
+    directories = ["C://Users/edj9/Box/11Foot8/Data/Full_Crashes/Audio",
+                   "C://Users/edj9/Box/11Foot8/Data/Trains/Audio"]
+    output = "C:/Users/edj9/Box/11Foot8/Data/Compilations/full_crash_compilation.wav"
     ext = '.wav'
     event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)    
     real_crash_times = event_times_cum_sum[np.where(event_ids == 1)]
