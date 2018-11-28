@@ -294,6 +294,9 @@ if __name__ == "__main__":
                                           crashes_secs)
     successes_secs, successes_detection_secs, missed_crashes_secs, false_positives_secs, accuracy = accuracy_results
     
+    successes = np.array(successes_secs)/t
+    successes_detection = np.array(successes_detection_secs)/t
+    missed_crashes = np.array(missed_crashes_secs)/t
     false_positives = np.array(false_positives_secs)/t
     
     print('accuracy of algorithm:')
@@ -313,17 +316,20 @@ if __name__ == "__main__":
     
 
     #%% fft on each detection
-    
-    fft_pdf_name = '../Data/fft_graphs.pdf'
-    pp_fft = PdfPages(fft_pdf_name)
-    for crash in crashes:
-        make_fft(N,
-                 fs,
-                 t,
-                 crash,
-                 data,
-                 print_pdf=pp_fft)
-    pp_fft.close()
+    all_detections = {'successes': successes,
+                      'successes_detection': successes_detection,
+                      'missed_crashes': missed_crashes,
+                      'false_positives': false_positives}
+    for detect_type_str, times_array in all_detections.items():
+        pp_fft = PdfPages('../Data/FFT/fft_' + detect_type_str +'_graphs.pdf')
+        for time in times_array:
+            make_fft(N,
+                     fs,
+                     t,
+                     time,
+                     data,
+                     print_pdf=pp_fft)
+        pp_fft.close()
     
     #%% print detected crashes
     """
