@@ -7,12 +7,6 @@ from scipy.io import wavfile
 import os
 from matplotlib.backends.backend_pdf import PdfPages
 import datetime
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 14 15:19:40 2018
-
-@author: elind
-"""
 import os
 import wave
 import contextlib
@@ -139,11 +133,7 @@ def make_fft(N, fs, t, crash, data, print_pdf=None):
     ax1.set_ylabel('Amplitude')
     ax1.set_xlabel('Frequency [Hz]')
     ax1.set_title(str(crash*N/fs))
-<<<<<<< HEAD
-    # set standard ax1.set_ylim([])
-=======
-    ax1.set_ylim(0, 500)
->>>>>>> 9203cb4244424551443f4716f228fa3e7dbc4ba0
+    # ax1.set_ylim(0, 500) # set standard ax1.set_ylim([])
 
     if print_pdf != None:
         print_pdf.savefig()  # save to pdf
@@ -240,18 +230,21 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
 
 def calculate_accuracy(real_crash_times, crashes_secs):
     successes = []
-    failures = []
+    successes_detection = []
+    missed_crashes = []
     false_positives = []
-    for y in real_crash_times:
-        if len(list(x for x in crashes_secs if y-10 <= x <= y+10)) > 0:
-            successes += [y]
+    for time in real_crash_times:
+        detections = list(x for x in crashes_secs if time-10 <= x <= time+10)
+        if len(detections) > 0:
+            successes += [time]
+            successes_detection += detections
         else:
-            failures += [y]
-    accuracy = len(successes) / (len(successes) + len(failures))
+            missed_crashes += [time]
+    accuracy = len(successes) / (len(successes) + len(missed_crashes))
     for time in crashes_secs:
         if len(list(x for x in real_crash_times if time-10 <= x <= time+10)) == 0:
             false_positives += [time]
-    return successes, failures, false_positives, accuracy
+    return successes, successes_detection, missed_crashes, false_positives, accuracy
     
 
 if __name__ == "__main__":    
@@ -264,11 +257,7 @@ if __name__ == "__main__":
     full_crashes_audio_file = "/Data/Full_Crashes/Audio"
     trains_audio_file = "/Data/Trains/Audio"
     ### IMPORTANT: CHANGE THIS
-<<<<<<< HEAD
-    work_dir = edj9_dir
-=======
     work_dir = elind_box_dir
->>>>>>> 9203cb4244424551443f4716f228fa3e7dbc4ba0
     
     
     directories = [work_dir + full_crashes_audio_file,
@@ -301,19 +290,22 @@ if __name__ == "__main__":
 
     #%% calculate accuracy
     
-    successes, failures, false_positives, accuracy = calculate_accuracy(real_crash_times,
-                                                       crashes_secs)
+    accuracy_results = calculate_accuracy(real_crash_times,
+                                          crashes_secs)
+    successes, successes_detection, missed_crashes, false_positives, accuracy = accuracy_results
     
     print('accuracy of algorithm:')
-    print(str(len(successes)) + '/' + str(len(successes)+len(failures)) \
+    print(str(len(successes)) + '/' + str(len(successes)+len(missed_crashes)) \
           + ' crashes detected')
     print('\nproportion of real crashes detected:')
     print(accuracy)
     print('\nfalse positive count: {:}'.format(len(false_positives)))
-    print('\nsuccesses')
+    print('\nreal time of successfully detected crashes:')
     print(successes)
-    print('\nfailures')
-    print(failures)
+    print('\ndetection time of successfully detected crashes')
+    print(successes_detection)
+    print('\nmissed crashes:')
+    print(missed_crashes)
     print('\nfalse positives:')
     print(false_positives)
     
@@ -361,6 +353,3 @@ if __name__ == "__main__":
             else:
                 continue
     """
-        
-
-    
