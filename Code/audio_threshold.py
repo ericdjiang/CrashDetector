@@ -74,7 +74,7 @@ def make_compilation(directories, outfile, ext='.wav'):
     # without last value
     event_times_cum_sum = (event_times + durations_cum_sum)[:-1]
     
-    return event_ids, event_times_cum_sum, files
+    return event_ids, event_times_cum_sum, files, durations_cum_sum, durations
 
 
 
@@ -98,8 +98,9 @@ def peak_detect(x, t, lag, threshold, influence):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
                 labels[i] = 1
-                if not 1 in labels[int(i-(5/t)):i]:
-                    crashes += [i]
+                crashes += [i] # take out
+                #if not 1 in labels[int(i-(5/t)):i]:
+                    #crashes += [i]
             else:
                 labels[i] = 0
             filtered_y[i] = influence * x[i] + (1 - influence) * filtered_y[i - 1]
@@ -247,10 +248,13 @@ def calculate_accuracy(real_crash_times, crashes_secs):
     return successes_secs, successes_detection_secs, missed_crashes_secs, false_positives_secs, accuracy
     
 
-if __name__ == "__main__":    
+   
     
     
-    #%% create compilation and return statistics 
+    
+#%% create compilation and return statistics 
+if __name__ == "__main__": 
+    
     edj9_box_dir = "C://Users/edj9/Box/11Foot8/"
     elind_box_dir = "C://Users/elind/Box/11Foot8/"
     comp_file_name = "Data/Compilations/full_crash_compilation.wav"
@@ -264,8 +268,11 @@ if __name__ == "__main__":
                    work_dir + trains_audio_file]
     output = work_dir + comp_file_name
     ext = '.wav'
-    event_ids, event_times_cum_sum, files = make_compilation(directories, output, ext)    
+    compilation_results = make_compilation(directories, output, ext)
+    event_ids, event_times_cum_sum, files, durations_cum_sum, durations = compilation_results
     real_crash_times = event_times_cum_sum[np.where(event_ids == 1)]
+    car_crash_times = event_times_cum_sum[np.where(event_ids == 2)]
+    train_times = event_times_cum_sum[np.where(event_ids == 3)]
         
     
     #%% detect crashes on compilation
