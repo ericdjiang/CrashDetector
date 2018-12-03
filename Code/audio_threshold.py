@@ -90,6 +90,7 @@ def peak_detect(x, t, lag, threshold, influence):
     std_filter = np.zeros(len(x))
     var_filter = np.zeros(len(x))
     crashes = []
+    crash_durations = {}
 
     avg_filter[lag - 1] = np.mean(x[0:lag])
     std_filter[lag - 1] = np.std(x[0:lag])
@@ -97,8 +98,14 @@ def peak_detect(x, t, lag, threshold, influence):
     for i in range(lag, len(x)):
         if abs(x[i] - avg_filter[i - 1]) > threshold * std_filter[i - 1]:
             if x[i] > avg_filter[i - 1]:
-                labels[i] = 1
-                crashes += [i] # take out
+                if not 1 in labels[int(i-(30/t)):i]:
+                    labels[i] = 1
+                    crashes += [i]
+                    last_crash = i
+                    crash_durations[last_crash] = 1
+                else:
+                    crash_durations[last_crash] += 1
+                # only print one crash per 5 secs
                 #if not 1 in labels[int(i-(5/t)):i]:
                     #crashes += [i]
             else:
@@ -116,7 +123,8 @@ def peak_detect(x, t, lag, threshold, influence):
     return dict(signals=labels,
                 avgFilter=avg_filter,
                 stdFilter=std_filter,
-                crashes=crashes)
+                crashes=crashes,
+                crash_durations=crash_durations)
 
 
 def make_fft(N, fs, t, crash, data, print_pdf=None):
@@ -139,7 +147,7 @@ def make_fft(N, fs, t, crash, data, print_pdf=None):
     if print_pdf != None:
         print_pdf.savefig()  # save to pdf
         plt.close(fig)  # do not display figures
-
+        
 def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
                 influence=0.5, print_pdf=None, tick_dist=60.0):
     fs, data = wavfile.read(file_name)
@@ -193,7 +201,7 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
     ax4.set_ylim(0, 12)
     
     # Run algo with settings from above
-    result = peak_detect(energies,
+    result= peak_detect(energies,
                          t=t,
                          lag=lag,
                          threshold=threshold,
@@ -227,7 +235,8 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
     crashes_secs = np.round(crashes*t, 1)
     crash_times_mins = list(map(lambda x: str(datetime.timedelta(seconds=round(x))),
                            crashes_secs))
-    return data, crashes, crashes_secs, crash_times_mins, N, fs, t
+    crash_durations = result['crash_durations']
+    return data, crashes, crashes_secs, crash_times_mins, N, fs, t, crash_durations
 
 def calculate_accuracy(real_crash_times, crashes_secs):
     successes_secs = []
@@ -293,7 +302,7 @@ if __name__ == "__main__":
                                influence=influence,
                                print_pdf=pp,
                                tick_dist=2400.0)
-    data, crashes, crashes_secs, crash_times_mins, N, fs, t = peak_results
+    data, crashes, crashes_secs, crash_times_mins, N, fs, t, crash_durations = peak_results
 
     #%% calculate accuracy
     
@@ -323,6 +332,7 @@ if __name__ == "__main__":
     
 
     #%% fft on each detection
+    """
     all_detections = {'successes': successes,
                       'successes_detection': successes_detection,
                       'missed_crashes': missed_crashes,
@@ -337,7 +347,7 @@ if __name__ == "__main__":
                      data,
                      print_pdf=pp_fft)
         pp_fft.close()
-    
+    """
     #%% print detected crashes
     """
     print('Potential crashes at times:')
