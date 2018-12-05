@@ -238,11 +238,15 @@ def detect_peak(file_name, t=0.1, start_t=0, lag=1500, threshold=6,
     crash_durations = result['crash_durations']
     return data, crashes, crashes_secs, crash_times_mins, N, fs, t, crash_durations
 
-def calculate_accuracy(real_crash_times, crashes_secs):
+def calculate_accuracy(real_crash_times, crash_durations):
+    crashes = np.array(list(crash_durations.keys()))
+    crashes_secs = np.array(crashes)*t
     successes_secs = []
     successes_detection_secs = []
     missed_crashes_secs = []
     false_positives_secs = []
+    successes_durations = {}
+    false_positives_durations = {}
     for time in real_crash_times:
         detections = list(x for x in crashes_secs if time-10 <= x <= time+10)
         if len(detections) > 0:
@@ -254,7 +258,15 @@ def calculate_accuracy(real_crash_times, crashes_secs):
     for time in crashes_secs:
         if len(list(x for x in real_crash_times if time-10 <= x <= time+10)) == 0:
             false_positives_secs += [time]
-    return successes_secs, successes_detection_secs, missed_crashes_secs, false_positives_secs, accuracy
+    successes_detections = np.array(successes_detection_secs)/t
+    for successes_detection in successes_detections:
+        successes_durations[successes_detection] = crash_durations.get(successes_detection, '?')
+    missed_crashes = np.array(missed_crashes_secs)/t
+    false_positives = np.array(false_positives_secs)/t
+    for false_positive in false_positives:
+        false_positives_durations[false_positive] = crash_durations.get(false_positive, '?')
+        
+    return successes_secs, successes_durations, missed_crashes, false_positives_durations, accuracy
     
 
    
@@ -307,28 +319,26 @@ if __name__ == "__main__":
     #%% calculate accuracy
     
     accuracy_results = calculate_accuracy(real_crash_times,
-                                          crashes_secs)
-    successes_secs, successes_detection_secs, missed_crashes_secs, false_positives_secs, accuracy = accuracy_results
-    
+                                          crash_durations)
+    successes_secs, successes_durations, missed_crashes, false_positives_durations, accuracy = accuracy_results
     successes = np.array(successes_secs)/t
-    successes_detection = np.array(successes_detection_secs)/t
-    missed_crashes = np.array(missed_crashes_secs)/t
-    false_positives = np.array(false_positives_secs)/t
+    successes_detections = np.array(list(successes_durations.keys()))/t
+    false_positives = np.array(list(false_positives_durations.keys()))/t
     
     print('accuracy of algorithm:')
-    print(str(len(successes_secs)) + '/' + str(len(successes_secs)+len(missed_crashes_secs)) \
+    print(str(len(successes_secs)) + '/' + str(len(successes_secs)+len(missed_crashes)) \
           + ' crashes detected')
     print('\nproportion of real crashes detected:')
     print(accuracy)
-    print('\nfalse positive count: {:}'.format(len(false_positives_secs)))
+    print('\nfalse positive count: {:}'.format(len(false_positives)))
     print('\nreal time of successfully detected crashes:')
     print(successes_secs)
     print('\ndetection time of successfully detected crashes')
-    print(successes_detection_secs)
+    print(successes_detections)
     print('\nmissed crashes at times:')
-    print(missed_crashes_secs)
+    print(missed_crashes)
     print('\nfalse positives:')
-    print(false_positives_secs)
+    print(false_positives)
     
 
     #%% fft on each detection
